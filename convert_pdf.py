@@ -16,6 +16,8 @@ except ImportError:
     LAYOUT_AVAILABLE = False
 
 import pymupdf4llm
+import os
+import pymupdf
 
 
 def convert_pdf_to_markdown(pdf_path: str, output_path: str | None = None) -> str:
@@ -44,11 +46,39 @@ def convert_pdf_to_markdown(pdf_path: str, output_path: str | None = None) -> st
     else:
         print("   ⚠ PyMuPDF-Layout nu e instalat (rulează: uv add pymupdf-layout)")
     
-    # Conversie PDF → Markdown / Config
+    # Ajută OCR-ul: dacă lipsește TESSDATA_PREFIX, încearcă să-l deduci automat
+    # (PyMuPDF: tessdata poate fi obținut prin get_tessdata()).
+    if "TESSDATA_PREFIX" not in os.environ:
+        try:
+            tessdata = pymupdf.get_tessdata()
+            if tessdata:
+                os.environ["TESSDATA_PREFIX"] = tessdata
+        except Exception:
+            pass
+
     md_text = pymupdf4llm.to_markdown(
         doc=str(pdf_file),
-        page_chunks=False,      # Un singur string pentru tot documentul
-        write_images=False,     # Nu extrage imagini (pentru simplicitate)
+        # Varianta A: un singur string (un singur fișier .md)
+        page_chunks=False,
+
+        # NU imagini
+        write_images=False,
+        embed_images=False,
+
+        # TABLES: Layout + OCR asistat (doar unde heuristica decide că ajută)
+        use_ocr=True,
+        ocr_dpi=400,
+
+        # Ajută când Layout marchează zone ca "picture"
+        force_text=True,
+
+        # (Opțional) mai curat pentru rapoarte: scoate headere/footere repetitive
+        header=False,
+        footer=False,        
+        
+        # Ajută să păstrezi granițele de pagină în .md (marker artificial)
+        page_separators=True,
+        show_progress=True,
     )
     
     # Determină calea output

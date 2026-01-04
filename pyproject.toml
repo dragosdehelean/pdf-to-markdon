@@ -5,6 +5,5 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "pymupdf-layout>=1.26.6",
-    "pymupdf4llm>=0.2.7",
+    "pymupdf4llm[ocr,layout]>=0.2.7",
 ]
